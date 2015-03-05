@@ -119,6 +119,12 @@ check_sneaky_paths() {
 	done
 }
 
+remove_extension_gpg() {
+	# remove .gpg file extension at the end of a line and/or before an arrow representing a symlink. keep color information.
+	# if GNU sed is present, use -r switch, otherwise use -E switch
+	sed $(sed --version 2>&1 | grep -q "GNU sed" && printf "%s" "-r" || printf "%s" "-E") 's/\.gpg(\x1B\[[0-9]+m)?( ->|$)/\1\2/g'
+}
+
 #
 # END helper functions
 #
@@ -322,7 +328,7 @@ cmd_show() {
 		else
 			echo "${path%\/}"
 		fi
-		tree -C -l --noreport "$PREFIX/$path" | tail -n +2 | sed 's/\.gpg\(\x1B\[[0-9]\+m\)\{0,1\}\( ->\|$\)/\1\2/g' # remove .gpg at end of line, but keep colors
+		tree -C -l --noreport "$PREFIX/$path" | tail -n +2 | remove_extension_gpg
 	elif [[ -z $path ]]; then
 		die "Error: password store is empty. Try \"pass init\"."
 	else
@@ -334,7 +340,7 @@ cmd_find() {
 	[[ -z "$@" ]] && die "Usage: $PROGRAM $COMMAND pass-names..."
 	IFS="," eval 'echo "Search Terms: $*"'
 	local terms="*$(printf '%s*|*' "$@")"
-	tree -C -l --noreport -P "${terms%|*}" --prune --matchdirs --ignore-case "$PREFIX" | tail -n +2 | sed 's/\.gpg\(\x1B\[[0-9]\+m\)\{0,1\}\( ->\|$\)/\1\2/g'
+	tree -C -l --noreport -P "${terms%|*}" --prune --matchdirs --ignore-case "$PREFIX" | tail -n +2 | remove_extension_gpg
 }
 
 cmd_grep() {
